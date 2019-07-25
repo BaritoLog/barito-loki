@@ -1,4 +1,4 @@
-module github.com/BaritoLog/barito-loki
+module github.com/vwidjaya/barito-loki
 
 go 1.12
 

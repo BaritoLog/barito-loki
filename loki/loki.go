@@ -10,7 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/snappy"
 
-	pb "github.com/BaritoLog/barito-loki/timberproto"
+	pb "github.com/vwidjaya/barito-loki/timberproto"
 	log "github.com/sirupsen/logrus"
 )
 

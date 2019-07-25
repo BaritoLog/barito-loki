@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	pb "github.com/BaritoLog/barito-loki/timberproto"
+	pb "github.com/vwidjaya/barito-loki/timberproto"
 	"github.com/BaritoLog/go-boilerplate/errkit"
 	"github.com/golang/protobuf/ptypes"
 )

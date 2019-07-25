@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/BaritoLog/barito-loki/loki"
+	"github.com/vwidjaya/barito-loki/loki"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
