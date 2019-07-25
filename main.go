@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vwidjaya/barito-loki/loki"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"github.com/vwidjaya/barito-loki/cmds"
 )
 
 const (
@@ -28,7 +28,7 @@ func main() {
 		Name:    Name,
 		Usage:   "Forward logs to Loki for Barito project",
 		Version: fmt.Sprintf("%s-%s-%s", Version, Build, Commit),
-		Action:  loki.Start,
+		Action:  cmds.ActionBaritoLokiService,
 		Before: func(c *cli.Context) error {
 			fmt.Fprintf(os.Stderr, "%s Started. Version: %s Build: %s Commit: %s\n", Name, Version, Build, Commit)
 			return nil

@@ -1,34 +1,15 @@
 package loki
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/BaritoLog/go-boilerplate/errkit"
-	"github.com/BaritoLog/go-boilerplate/srvkit"
-	"github.com/urfave/cli"
 )
 
 const (
-	Address       = ":24400"
 	ErrLokiClient = errkit.Error("Loki Client Failed")
 )
-
-func Start(c *cli.Context) (err error) {
-	fmt.Println("Loki client started.")
-
-	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
-	service := NewBaritoLokiService(Address, lkConfig)
-
-	err = service.Start()
-	if err != nil {
-		return
-	}
-	srvkit.AsyncGracefulShutdown(service.Close)
-
-	return
-}
 
 type BaritoLokiService interface {
 	Start() error
