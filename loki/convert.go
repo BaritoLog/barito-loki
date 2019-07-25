@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	pb "github.com/vwidjaya/barito-loki/timberproto"
 	"github.com/BaritoLog/go-boilerplate/errkit"
 	"github.com/golang/protobuf/ptypes"
+	pb "github.com/vwidjaya/barito-loki/timberproto"
 )
 
 const (
@@ -34,9 +34,24 @@ func ConvertBytesToTimber(data []byte) (timber Timber, err error) {
 	return
 }
 
+func ConvertBytesToTimberCollection(data []byte) (timberCollection TimberCollection, err error) {
+	err = json.Unmarshal(data, &timberCollection)
+	if err != nil {
+		err = errkit.Concat(JsonParseError, err)
+		return
+	}
+
+	return
+}
+
 func ConvertRequestToTimber(req *http.Request) (Timber, error) {
 	body, _ := ioutil.ReadAll(req.Body)
 	return ConvertBytesToTimber(body)
+}
+
+func ConvertBatchRequestToTimberCollection(req *http.Request) (TimberCollection, error) {
+	body, _ := ioutil.ReadAll(req.Body)
+	return ConvertBytesToTimberCollection(body)
 }
 
 func ConvertTimberToLokiProto(timber Timber) *pb.Entry {

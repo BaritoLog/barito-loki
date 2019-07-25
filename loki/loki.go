@@ -10,8 +10,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/snappy"
 
-	pb "github.com/vwidjaya/barito-loki/timberproto"
 	log "github.com/sirupsen/logrus"
+	pb "github.com/vwidjaya/barito-loki/timberproto"
 )
 
 const (

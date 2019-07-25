@@ -1,6 +1,8 @@
 package loki
 
 import (
+	"bytes"
+	"net/http"
 	"testing"
 
 	. "github.com/BaritoLog/go-boilerplate/testkit"
@@ -31,12 +33,37 @@ func TestConvertBytesToTimber_InvalidContext(t *testing.T) {
 	FatalIfWrongError(t, err, "Invalid Context Error: es_index_prefix is missing")
 }
 
+func TestConvertBytesToTimberCollection_JsonParseError(t *testing.T) {
+	_, err := ConvertBytesToTimberCollection([]byte(`invalid_json`))
+	FatalIfWrongError(t, err, string(JsonParseError))
+}
+
 func TestConvertTimberToLokiProto(t *testing.T) {
 	timber := make(map[string]interface{})
 	timber["hello"] = "world"
 
 	entry := ConvertTimberToLokiProto(timber)
 	FatalIf(t, entry.Line != `{"hello":"world"}`, "wrong entry.hello")
+}
+
+func TestConvertRequestToTimber(t *testing.T) {
+	req, err := http.NewRequest("POST", "/", bytes.NewReader(sampleRawTimber()))
+	FatalIfError(t, err)
+
+	timber, err := ConvertRequestToTimber(req)
+	FatalIfError(t, err)
+
+	FatalIf(t, timber["message"] != "some-message", "Wrong timber.message")
+}
+
+func TestConvertBatchRequestToTimberCollection(t *testing.T) {
+	req, err := http.NewRequest("POST", "/produce_batch", bytes.NewReader(sampleRawTimberCollection()))
+	FatalIfError(t, err)
+
+	timberCollection, err := ConvertBatchRequestToTimberCollection(req)
+	FatalIfError(t, err)
+
+	FatalIf(t, timberCollection.Items[0]["message"] != "some-message-1", "Wrong timber.message")
 }
 
 func sampleRawTimber() []byte {

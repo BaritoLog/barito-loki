@@ -15,8 +15,8 @@ const (
 type Timber map[string]interface{}
 
 type TimberCollection struct {
-	Items  []Timber `json:"items"`
-	Labels string   `json:"_labels"`
+	Items   []Timber               `json:"items"`
+	Context map[string]interface{} `json:"_ctx"`
 }
 
 func (t Timber) SetTimestamp(timestamp string) {
