@@ -42,8 +42,8 @@ type lokiClient struct {
 	client  *http.Client
 }
 
-func NewLoki(conf lokiConfig) (lkClient lokiClient) {
-	lkClient = lokiClient{
+func NewLoki(conf lokiConfig) Loki {
+	lkClient := lokiClient{
 		config:  &conf,
 		entries: make(chan *lokiEntry, conf.bulkSize),
 		client:  &http.Client{},
@@ -51,7 +51,7 @@ func NewLoki(conf lokiConfig) (lkClient lokiClient) {
 
 	go lkClient.run()
 
-	return
+	return &lkClient
 }
 
 type lokiEntry struct {

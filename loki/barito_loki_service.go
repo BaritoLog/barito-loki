@@ -15,7 +15,8 @@ const (
 func Start(c *cli.Context) (err error) {
 	fmt.Println("Loki client started.")
 
-	service := NewBaritoLokiService(Address)
+	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
+	service := NewBaritoLokiService(Address, lkConfig)
 
 	err = service.Start()
 	if err != nil {
@@ -33,13 +34,15 @@ type BaritoLokiService interface {
 }
 
 type baritoLokiService struct {
-	addr   string
-	server *http.Server
+	addr     string
+	server   *http.Server
+	lkClient Loki
 }
 
-func NewBaritoLokiService(addr string) BaritoLokiService {
+func NewBaritoLokiService(addr string, lkConfig lokiConfig) BaritoLokiService {
 	return &baritoLokiService{
-		addr: addr,
+		addr:     addr,
+		lkClient: NewLoki(lkConfig),
 	}
 }
 
