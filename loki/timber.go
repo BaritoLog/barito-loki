@@ -33,8 +33,7 @@ func (t Timber) Labels() (s string) {
 	return
 }
 
-func (t Timber) SetAppNameLabel(s string) {
-	labels := fmt.Sprintf("{app_name=\"%s-%s\"}", s, time.Now().Format("2006.01.02"))
+func (t Timber) SetAppNameLabel(labels string) {
 	t["_labels"] = labels
 }
 
@@ -52,7 +51,12 @@ func (t Timber) InitAppNameLabel() (err error) {
 		return
 	}
 
-	t.SetAppNameLabel(esIndexPrefix)
+	labels := generateLabelForTimber(esIndexPrefix)
+	t.SetAppNameLabel(labels)
 	delete(t, "_ctx")
 	return
+}
+
+func generateLabelForTimber(s string) string {
+	return fmt.Sprintf("{app_name=\"%s-%s\"}", s, time.Now().Format("2006.01.02"))
 }

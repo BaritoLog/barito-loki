@@ -20,7 +20,10 @@ func TestBaritoLokiService_ServeHTTP_OnBadRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	service := &baritoLokiService{}
+	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
+	service := &baritoLokiService{
+		lkClient: NewLoki(lkConfig),
+	}
 	defer service.Close()
 
 	req, _ := http.NewRequest("POST", "/", strings.NewReader(`invalid-body`))
@@ -58,13 +61,32 @@ func TestBaritoLokiService_ServeHTTP_OnSuccess(t *testing.T) {
 	FatalIfWrongResponseStatus(t, resp, http.StatusOK)
 }
 
+func TestBaritoLokiService_ServeHTTP_ProduceBatch_OnSuccess(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
+	service := &baritoLokiService{
+		lkClient: NewLoki(lkConfig),
+	}
+	defer service.Close()
+
+	req, _ := http.NewRequest("POST", "/produce_batch", bytes.NewReader(sampleRawTimberCollection()))
+	resp := RecordResponse(service.ServeHTTP, req)
+
+	FatalIfWrongResponseStatus(t, resp, http.StatusOK)
+}
+
 func TestBaritoLokiService_Start(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
 	service := &baritoLokiService{
-		addr: ":24400",
+		addr:     ":24400",
+		lkClient: NewLoki(lkConfig),
 	}
+	defer service.Close()
 
 	var err error
 	go func() {

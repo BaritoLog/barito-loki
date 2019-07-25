@@ -3,6 +3,7 @@ package loki
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/BaritoLog/go-boilerplate/errkit"
 	"github.com/BaritoLog/go-boilerplate/srvkit"
@@ -70,20 +71,44 @@ func (s *baritoLokiService) initHttpServer() (server *http.Server) {
 }
 
 func (s *baritoLokiService) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	timber, err := ConvertRequestToTimber(req)
-	if err != nil {
-		onBadRequest(rw, err)
-		return
-	}
-
 	if s.lkClient == nil {
 		onStoreError(rw, ErrLokiClient)
 		return
 	}
 
-	s.lkClient.Store(timber)
+	var labels string
+
+	if req.URL.Path == "/produce_batch" {
+		timberCollection, err := ConvertBatchRequestToTimberCollection(req)
+		if err != nil {
+			onBadRequest(rw, err)
+			return
+		}
+
+		esIndexPrefix := timberCollection.Context["es_index_prefix"].(string)
+		labels = generateLabelForTimber(esIndexPrefix)
+
+		for _, timber := range timberCollection.Items {
+			timber.SetAppNameLabel(labels)
+			if timber.Timestamp() == "" {
+				timber.SetTimestamp(time.Now().UTC().Format(time.RFC3339))
+			}
+
+			s.lkClient.Store(timber)
+		}
+	} else {
+		timber, err := ConvertRequestToTimber(req)
+		if err != nil {
+			onBadRequest(rw, err)
+			return
+		}
+
+		labels = timber.Labels()
+
+		s.lkClient.Store(timber)
+	}
 
 	onSuccess(rw, ForwardResult{
-		Labels: timber.Labels(),
+		Labels: labels,
 	})
 }
