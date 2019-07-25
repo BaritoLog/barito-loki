@@ -11,6 +11,7 @@ import (
 	"github.com/golang/snappy"
 
 	pb "github.com/BaritoLog/barito-loki/timberproto"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -63,6 +64,25 @@ func (c *lokiClient) Store(timber Timber) {
 	c.entries <- &lokiEntry{
 		labels: labels,
 		entry:  entry,
+	}
+}
+
+func (c *lokiClient) send(batch map[string]*pb.Stream) {
+	buf, err := encodeBatch(batch)
+	if err != nil {
+		log.Warnf("Loki Client - unable to marshal: %s\n", err)
+		return
+	}
+
+	resp, body, err := c.sendReq(buf)
+	if err != nil {
+		log.Warnf("Loki Client - unable to send an HTTP request: %s\n", err)
+		return
+	}
+
+	if resp.StatusCode != 204 {
+		log.Warnf("Loki Client - unexpected HTTP status code: %d, message: %s\n", resp.StatusCode, body)
+		return
 	}
 }
 
