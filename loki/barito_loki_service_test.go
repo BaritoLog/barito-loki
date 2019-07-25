@@ -29,11 +29,27 @@ func TestBaritoLokiService_ServeHTTP_OnBadRequest(t *testing.T) {
 	FatalIfWrongResponseStatus(t, resp, http.StatusBadRequest)
 }
 
-func TestBaritoLokiService_ServeHTTP_OnSuccess(t *testing.T) {
+func TestBaritoLokiService_ServeHTTP_OnStoreError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	service := &baritoLokiService{}
+	defer service.Close()
+
+	req, _ := http.NewRequest("POST", "/", bytes.NewReader(sampleRawTimber()))
+	resp := RecordResponse(service.ServeHTTP, req)
+
+	FatalIfWrongResponseStatus(t, resp, http.StatusBadGateway)
+}
+
+func TestBaritoLokiService_ServeHTTP_OnSuccess(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
+	service := &baritoLokiService{
+		lkClient: NewLoki(lkConfig),
+	}
 	defer service.Close()
 
 	req, _ := http.NewRequest("POST", "/", bytes.NewReader(sampleRawTimber()))

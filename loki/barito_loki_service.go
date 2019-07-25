@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/BaritoLog/go-boilerplate/errkit"
 	"github.com/BaritoLog/go-boilerplate/srvkit"
 	"github.com/urfave/cli"
 )
 
 const (
-	Address = ":24400"
+	Address       = ":24400"
+	ErrLokiClient = errkit.Error("Loki Client Failed")
 )
 
 func Start(c *cli.Context) (err error) {
@@ -73,6 +75,13 @@ func (s *baritoLokiService) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 		onBadRequest(rw, err)
 		return
 	}
+
+	if s.lkClient == nil {
+		onStoreError(rw, ErrLokiClient)
+		return
+	}
+
+	s.lkClient.Store(timber)
 
 	onSuccess(rw, ForwardResult{
 		Labels: timber.Labels(),
