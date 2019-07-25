@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	pb "github.com/BaritoLog/barito-loki/timberproto"
 	"github.com/BaritoLog/go-boilerplate/errkit"
+	"github.com/golang/protobuf/ptypes"
 )
 
 const (
@@ -35,4 +37,19 @@ func ConvertBytesToTimber(data []byte) (timber Timber, err error) {
 func ConvertRequestToTimber(req *http.Request) (Timber, error) {
 	body, _ := ioutil.ReadAll(req.Body)
 	return ConvertBytesToTimber(body)
+}
+
+func ConvertTimberToLokiProto(timber Timber) *pb.Entry {
+	timberMap := make(map[string]interface{})
+	for k, v := range timber {
+		timberMap[k] = v
+	}
+
+	delete(timberMap, "_labels")
+	line, _ := json.Marshal(timberMap)
+
+	return &pb.Entry{
+		Timestamp: ptypes.TimestampNow(),
+		Line:      string(line),
+	}
 }

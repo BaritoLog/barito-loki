@@ -31,6 +31,14 @@ func TestConvertBytesToTimber_InvalidContext(t *testing.T) {
 	FatalIfWrongError(t, err, "Invalid Context Error: es_index_prefix is missing")
 }
 
+func TestConvertTimberToLokiProto(t *testing.T) {
+	timber := make(map[string]interface{})
+	timber["hello"] = "world"
+
+	entry := ConvertTimberToLokiProto(timber)
+	FatalIf(t, entry.Line != `{"hello":"world"}`, "wrong entry.hello")
+}
+
 func sampleRawTimber() []byte {
 	return []byte(`{
 		"location": "some-location",
