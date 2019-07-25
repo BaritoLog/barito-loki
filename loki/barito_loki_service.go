@@ -4,11 +4,25 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/BaritoLog/go-boilerplate/srvkit"
 	"github.com/urfave/cli"
+)
+
+const (
+	Address = ":24400"
 )
 
 func Start(c *cli.Context) (err error) {
 	fmt.Println("Loki client started.")
+
+	service := NewBaritoLokiService(Address)
+
+	err = service.Start()
+	if err != nil {
+		return
+	}
+	srvkit.AsyncGracefulShutdown(service.Close)
+
 	return
 }
 
