@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/snappy"
+
 	pb "github.com/BaritoLog/barito-loki/timberproto"
 )
 
@@ -61,6 +64,24 @@ func (c *lokiClient) Store(timber Timber) {
 		labels: labels,
 		entry:  entry,
 	}
+}
+
+func encodeBatch(batch map[string]*pb.Stream) ([]byte, error) {
+	req := pb.PushRequest{
+		Streams: make([]*pb.Stream, 0, len(batch)),
+	}
+
+	for _, stream := range batch {
+		req.Streams = append(req.Streams, stream)
+	}
+
+	buf, err := proto.Marshal(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	buf = snappy.Encode(nil, buf)
+	return buf, nil
 }
 
 func (c *lokiClient) sendReq(buf []byte) (resp *http.Response, resBody []byte, err error) {
