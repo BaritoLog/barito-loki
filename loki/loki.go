@@ -1,7 +1,9 @@
 package loki
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -45,4 +47,19 @@ func NewLoki(conf lokiConfig) (lkClient lokiClient) {
 type lokiEntry struct {
 	labels string
 	entry  *pb.Entry
+}
+
+func (c *lokiClient) sendReq(buf []byte) (resp *http.Response, resBody []byte, err error) {
+	resp, err = http.Post(c.config.pushURL, ContentType, bytes.NewBuffer(buf))
+	if err != nil {
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
+
+	resBody, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return resp, resBody, nil
 }
