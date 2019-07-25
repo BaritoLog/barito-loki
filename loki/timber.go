@@ -1,4 +1,4 @@
-package timber
+package loki
 
 import (
 	"fmt"

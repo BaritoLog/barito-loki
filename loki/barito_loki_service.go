@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	. "github.com/BaritoLog/barito-loki/timber"
 	"github.com/urfave/cli"
 )
 
