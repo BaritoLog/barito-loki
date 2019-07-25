@@ -28,6 +28,11 @@ func (t Timber) Timestamp() (s string) {
 	return
 }
 
+func (t Timber) Labels() (s string) {
+	s, _ = t["_labels"].(string)
+	return
+}
+
 func (t Timber) SetAppNameLabel(s string) {
 	labels := fmt.Sprintf("{app_name=\"%s-%s\"}", s, time.Now().Format("2006.01.02"))
 	t["_labels"] = labels
