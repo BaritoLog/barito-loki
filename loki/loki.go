@@ -28,6 +28,10 @@ func NewLokiConfig(lkUrl string, bulkSize int, flushMs int) lokiConfig {
 	}
 }
 
+type Loki interface {
+	Store(timber Timber)
+}
+
 type lokiClient struct {
 	config  *lokiConfig
 	entries chan *lokiEntry
@@ -47,6 +51,16 @@ func NewLoki(conf lokiConfig) (lkClient lokiClient) {
 type lokiEntry struct {
 	labels string
 	entry  *pb.Entry
+}
+
+func (c *lokiClient) Store(timber Timber) {
+	labels := timber.Labels()
+	entry := ConvertTimberToLokiProto(timber)
+
+	c.entries <- &lokiEntry{
+		labels: labels,
+		entry:  entry,
+	}
 }
 
 func (c *lokiClient) sendReq(buf []byte) (resp *http.Response, resBody []byte, err error) {
