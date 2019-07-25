@@ -49,6 +49,8 @@ func NewLoki(conf lokiConfig) (lkClient lokiClient) {
 		client:  &http.Client{},
 	}
 
+	go lkClient.run()
+
 	return
 }
 
@@ -64,6 +66,48 @@ func (c *lokiClient) Store(timber Timber) {
 	c.entries <- &lokiEntry{
 		labels: labels,
 		entry:  entry,
+	}
+}
+
+func (c *lokiClient) run() {
+	batch := map[string]*pb.Stream{}
+	batchSize := 0
+	maxWait := time.NewTimer(c.config.flushInterval)
+
+	defer func() {
+		if batchSize > 0 {
+			c.send(batch)
+		}
+	}()
+
+	for {
+		select {
+		case e := <-c.entries:
+			stream, ok := batch[e.labels]
+			if !ok {
+				stream = &pb.Stream{
+					Labels: e.labels,
+				}
+				batch[e.labels] = stream
+			}
+
+			stream.Entries = append(stream.Entries, e.entry)
+			batchSize++
+
+			if batchSize >= c.config.bulkSize {
+				c.send(batch)
+				batch = map[string]*pb.Stream{}
+				batchSize = 0
+				maxWait.Reset(c.config.flushInterval)
+			}
+		case <-maxWait.C:
+			if batchSize > 0 {
+				c.send(batch)
+				batch = map[string]*pb.Stream{}
+				batchSize = 0
+			}
+			maxWait.Reset(c.config.flushInterval)
+		}
 	}
 }
 
