@@ -20,6 +20,14 @@ func TestGetServiceAddress(t *testing.T) {
 	FatalIf(t, configServiceAddress() != ":12345", "should get from env variable")
 }
 
+func TestGetConsulLokiName(t *testing.T) {
+	FatalIf(t, configConsulLokiName() != DefaultConsulLokiName, "should return default ")
+
+	os.Setenv(EnvConsulLokiName, "thor")
+	defer os.Clearenv()
+	FatalIf(t, configConsulLokiName() != "thor", "should get from env variable")
+}
+
 func TestGetLokiUrl(t *testing.T) {
 	FatalIf(t, configLokiUrl() != DefaultLokiUrl, "should return default ")
 

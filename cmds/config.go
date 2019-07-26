@@ -9,6 +9,8 @@ import (
 
 const (
 	EnvServiceAddress      = "BARITO_LOKI_SERVICE_ADDRESS"
+	EnvConsulUrl           = "BARITO_CONSUL_URL"
+	EnvConsulLokiName      = "BARITO_CONSUL_LOKI_NAME"
 	EnvLokiUrl             = "BARITO_LOKI_URL"
 	EnvLokiBulkSize        = "BARITO_LOKI_BULK_SIZE"
 	EnvLokiFlushIntervalMs = "BARITO_LOKI_FLUSH_INTERVAL_MS"
@@ -16,6 +18,7 @@ const (
 
 var (
 	DefaultServiceAddress      = ":8080"
+	DefaultConsulLokiName      = "loki"
 	DefaultLokiUrl             = "http://localhost:3100"
 	DefaultLokiBulkSize        = 500
 	DefaultLokiFlushIntervalMs = 500
@@ -25,8 +28,25 @@ func configServiceAddress() (s string) {
 	return stringEnvOrDefault(EnvServiceAddress, DefaultServiceAddress)
 }
 
+func configConsulUrl() (s string) {
+	return os.Getenv(EnvConsulUrl)
+}
+
+func configConsulLokiName() (s string) {
+	return stringEnvOrDefault(EnvConsulLokiName, DefaultConsulLokiName)
+}
+
 func configLokiUrl() (url string) {
-	return stringEnvOrDefault(EnvLokiUrl, DefaultLokiUrl)
+	consulUrl := configConsulUrl()
+	name := configConsulLokiName()
+	url, err := consulLokiUrl(consulUrl, name)
+	if err != nil {
+		url = stringEnvOrDefault(EnvLokiUrl, DefaultLokiUrl)
+		return
+	}
+
+	logConfig("consul", EnvLokiUrl, url)
+	return
 }
 
 func configLokiBulkSize() (i int) {
