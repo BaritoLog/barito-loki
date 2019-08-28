@@ -7,8 +7,7 @@ import (
 	"time"
 
 	"github.com/BaritoLog/go-boilerplate/errkit"
-	"github.com/golang/protobuf/ptypes"
-	pb "github.com/vwidjaya/barito-loki/timberproto"
+	pb "github.com/grafana/loki/pkg/logproto"
 )
 
 const (
@@ -64,7 +63,7 @@ func ConvertTimberToLokiProto(timber Timber) *pb.Entry {
 	line, _ := json.Marshal(timberMap)
 
 	return &pb.Entry{
-		Timestamp: ptypes.TimestampNow(),
+		Timestamp: time.Now().UTC(),
 		Line:      string(line),
 	}
 }

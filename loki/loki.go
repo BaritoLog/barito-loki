@@ -10,8 +10,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/snappy"
 
+	pb "github.com/grafana/loki/pkg/logproto"
 	log "github.com/sirupsen/logrus"
-	pb "github.com/vwidjaya/barito-loki/timberproto"
 )
 
 const (
@@ -91,7 +91,7 @@ func (c *lokiClient) run() {
 				batch[e.labels] = stream
 			}
 
-			stream.Entries = append(stream.Entries, e.entry)
+			stream.Entries = append(stream.Entries, *e.entry)
 			batchSize++
 
 			if batchSize >= c.config.bulkSize {
