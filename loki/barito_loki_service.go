@@ -2,9 +2,17 @@ package loki
 
 import (
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/BaritoLog/go-boilerplate/errkit"
+	"github.com/cortexproject/cortex/pkg/util"
+	"github.com/cortexproject/cortex/pkg/util/flagext"
+	"github.com/prometheus/common/model"
+
+	logkit "github.com/go-kit/kit/log/logrus"
+	promtail "github.com/grafana/loki/pkg/promtail/client"
+	logrus "github.com/sirupsen/logrus"
 )
 
 const (
@@ -20,25 +28,91 @@ type BaritoLokiService interface {
 type baritoLokiService struct {
 	addr     string
 	server   *http.Server
-	lkClient Loki
+	ptConfig promtail.Config
+	ptClient promtail.Client
 }
 
-func NewBaritoLokiService(addr string, lkConfig lokiConfig) BaritoLokiService {
-	return &baritoLokiService{
-		addr:     addr,
-		lkClient: NewLoki(lkConfig),
+func NewBaritoLokiService(params map[string]interface{}) (srv BaritoLokiService, err error) {
+	ptConfig, err := parseLokiConfig(params)
+	if err != nil {
+		return
 	}
+
+	srv = &baritoLokiService{
+		addr:     params["serviceAddr"].(string),
+		ptConfig: ptConfig,
+	}
+
+	return
+}
+
+func parseLokiConfig(params map[string]interface{}) (cfg promtail.Config, err error) {
+	lokiUrl := params["lokiUrl"].(string)
+	batchWaitMs := params["batchWaitMs"].(int)
+	batchSize := params["batchSize"].(int)
+	minBackoffMs := params["minBackoffMs"].(int)
+	maxBackoffMs := params["maxBackoffMs"].(int)
+	maxRetries := params["maxRetries"].(int)
+	timeoutMs := params["timeoutMs"].(int)
+
+	url, err := url.Parse(lokiUrl)
+	if err != nil {
+		return
+	}
+
+	promtailURL := flagext.URLValue{
+		URL: url,
+	}
+
+	cfg = promtail.Config{
+		URL:       promtailURL,
+		BatchWait: time.Duration(batchWaitMs) * time.Millisecond,
+		BatchSize: batchSize,
+		BackoffConfig: util.BackoffConfig{
+			MinBackoff: time.Duration(minBackoffMs) * time.Millisecond,
+			MaxBackoff: time.Duration(maxBackoffMs) * time.Millisecond,
+			MaxRetries: maxRetries,
+		},
+		Timeout: time.Duration(timeoutMs) * time.Millisecond,
+	}
+
+	return
 }
 
 func (s *baritoLokiService) Start() (err error) {
+	err = s.initPromtailClient()
+	if err != nil {
+		return
+	}
+
 	server := s.initHttpServer()
 	return server.ListenAndServe()
 }
 
-func (a *baritoLokiService) Close() {
-	if a.server != nil {
-		a.server.Close()
+func (s *baritoLokiService) Close() {
+	if s.ptClient != nil {
+		s.ptClient.Stop()
 	}
+
+	if s.server != nil {
+		s.server.Close()
+	}
+}
+
+func (s *baritoLokiService) initPromtailClient() (err error) {
+	if s.ptClient != nil {
+		return nil
+	}
+
+	logger := logkit.NewLogrusLogger(logrus.New())
+
+	ptClient, err := promtail.New(s.ptConfig, logger)
+	if err != nil {
+		return
+	}
+
+	s.ptClient = ptClient
+	return
 }
 
 func (s *baritoLokiService) initHttpServer() (server *http.Server) {
@@ -52,7 +126,7 @@ func (s *baritoLokiService) initHttpServer() (server *http.Server) {
 }
 
 func (s *baritoLokiService) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	if s.lkClient == nil {
+	if s.ptClient == nil {
 		onStoreError(rw, ErrLokiClient)
 		return
 	}
@@ -69,13 +143,19 @@ func (s *baritoLokiService) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 		esIndexPrefix := timberCollection.Context["es_index_prefix"].(string)
 		labels = generateLabelForTimber(esIndexPrefix)
 
+		var ls model.LabelSet
+		ls.UnmarshalJSON([]byte(labels))
+
 		for _, timber := range timberCollection.Items {
 			timber.SetAppNameLabel(labels)
 			if timber.Timestamp() == "" {
 				timber.SetTimestamp(time.Now().UTC().Format(time.RFC3339))
 			}
 
-			s.lkClient.Store(timber)
+			ts := time.Now().UTC()
+			line := ConvertTimberToLokiEntryLine(timber)
+
+			_ = s.ptClient.Handle(ls, ts, line)
 		}
 	} else {
 		timber, err := ConvertRequestToTimber(req)
@@ -84,9 +164,14 @@ func (s *baritoLokiService) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 			return
 		}
 
+		var ls model.LabelSet
 		labels = timber.Labels()
+		ls.UnmarshalJSON([]byte(labels))
 
-		s.lkClient.Store(timber)
+		ts := time.Now().UTC()
+		line := ConvertTimberToLokiEntryLine(timber)
+
+		_ = s.ptClient.Handle(ls, ts, line)
 	}
 
 	onSuccess(rw, ForwardResult{

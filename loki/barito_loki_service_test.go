@@ -5,10 +5,14 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	. "github.com/BaritoLog/go-boilerplate/testkit"
 	"github.com/BaritoLog/go-boilerplate/timekit"
 	"github.com/golang/mock/gomock"
+	"github.com/grafana/loki/pkg/promtail/api"
+	promtail "github.com/grafana/loki/pkg/promtail/client/fake"
+	"github.com/prometheus/common/model"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,9 +24,8 @@ func TestBaritoLokiService_ServeHTTP_OnBadRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
 	service := &baritoLokiService{
-		lkClient: NewLoki(lkConfig),
+		ptClient: FakeLokiClient(),
 	}
 	defer service.Close()
 
@@ -49,9 +52,8 @@ func TestBaritoLokiService_ServeHTTP_OnSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
 	service := &baritoLokiService{
-		lkClient: NewLoki(lkConfig),
+		ptClient: FakeLokiClient(),
 	}
 	defer service.Close()
 
@@ -65,9 +67,8 @@ func TestBaritoLokiService_ServeHTTP_ProduceBatch_OnSuccess(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
 	service := &baritoLokiService{
-		lkClient: NewLoki(lkConfig),
+		ptClient: FakeLokiClient(),
 	}
 	defer service.Close()
 
@@ -81,10 +82,9 @@ func TestBaritoLokiService_Start(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	lkConfig := NewLokiConfig("http://localhost:3100", 500, 500)
 	service := &baritoLokiService{
 		addr:     ":24400",
-		lkClient: NewLoki(lkConfig),
+		ptClient: FakeLokiClient(),
 	}
 	defer service.Close()
 
@@ -100,4 +100,13 @@ func TestBaritoLokiService_Start(t *testing.T) {
 	resp, err := http.Get("http://:24400")
 	FatalIfError(t, err)
 	FatalIfWrongResponseStatus(t, resp, http.StatusBadRequest)
+}
+
+func FakeLokiClient() *promtail.Client {
+	onHandleFunc := api.EntryHandlerFunc(func(labels model.LabelSet, time time.Time, entry string) error { return nil })
+	onStopFunc := func() {}
+	return &promtail.Client{
+		OnHandleEntry: onHandleFunc,
+		OnStop:        onStopFunc,
+	}
 }

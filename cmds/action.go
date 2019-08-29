@@ -9,19 +9,27 @@ import (
 )
 
 func ActionBaritoLokiService(c *cli.Context) (err error) {
-	address := configServiceAddress()
-	lokiUrl := configLokiUrl()
-	bulkSize := configLokiBulkSize()
-	flushMs := configLokiFlushIntervalMs()
+	serviceParams := map[string]interface{}{
+		"serviceAddr":  configServiceAddress(),
+		"lokiUrl":      configLokiUrl(),
+		"batchWaitMs":  configLokiBatchWaitMs(),
+		"batchSize":    configLokiBatchSize(),
+		"minBackoffMs": configLokiMinBackoffMs(),
+		"maxBackoffMs": configLokiMaxBackoffMs(),
+		"maxRetries":   configLokiMaxRetries(),
+		"timeoutMs":    configLokiTimeoutMs(),
+	}
 
-	lkConfig := loki.NewLokiConfig(lokiUrl, bulkSize, flushMs)
-	service := loki.NewBaritoLokiService(address, lkConfig)
+	service, err := loki.NewBaritoLokiService(serviceParams)
+	if err != nil {
+		return
+	}
 
 	err = service.Start()
 	if err != nil {
 		return
 	}
-	fmt.Println("Loki client started.")
+	fmt.Println("Loki's Promtail client started.")
 	srvkit.AsyncGracefulShutdown(service.Close)
 
 	return

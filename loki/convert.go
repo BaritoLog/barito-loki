@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/BaritoLog/go-boilerplate/errkit"
-	pb "github.com/grafana/loki/pkg/logproto"
 )
 
 const (
@@ -53,7 +52,7 @@ func ConvertBatchRequestToTimberCollection(req *http.Request) (TimberCollection,
 	return ConvertBytesToTimberCollection(body)
 }
 
-func ConvertTimberToLokiProto(timber Timber) *pb.Entry {
+func ConvertTimberToLokiEntryLine(timber Timber) string {
 	timberMap := make(map[string]interface{})
 	for k, v := range timber {
 		timberMap[k] = v
@@ -61,9 +60,5 @@ func ConvertTimberToLokiProto(timber Timber) *pb.Entry {
 
 	delete(timberMap, "_labels")
 	line, _ := json.Marshal(timberMap)
-
-	return &pb.Entry{
-		Timestamp: time.Now().UTC(),
-		Line:      string(line),
-	}
+	return string(line)
 }

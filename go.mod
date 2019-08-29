@@ -7,16 +7,16 @@ require (
 	cloud.google.com/go/bigtable v1.0.0 // indirect
 	github.com/BaritoLog/go-boilerplate v0.0.0-20190116075340-b95aeda121e9
 	github.com/bouk/monkey v1.0.1 // indirect
-	github.com/coreos/go-systemd v0.0.0-20181012123002-c6f51f82210d // indirect
-	github.com/cortexproject/cortex v0.1.0 // indirect
+	github.com/cortexproject/cortex v0.1.0
+	github.com/go-kit/kit v0.8.0
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.1
 	github.com/google/go-cmp v0.3.1 // indirect
-	github.com/gorilla/context v1.1.1 // indirect
 	github.com/grafana/loki v0.3.0
 	github.com/hashicorp/consul v1.4.4
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
+	github.com/prometheus/common v0.4.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/urfave/cli v1.20.0
 	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586 // indirect

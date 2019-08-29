@@ -8,20 +8,32 @@ import (
 )
 
 const (
-	EnvServiceAddress      = "BARITO_LOKI_SERVICE_ADDRESS"
-	EnvConsulUrl           = "BARITO_CONSUL_URL"
-	EnvConsulLokiName      = "BARITO_CONSUL_LOKI_NAME"
-	EnvLokiUrl             = "BARITO_LOKI_URL"
-	EnvLokiBulkSize        = "BARITO_LOKI_BULK_SIZE"
-	EnvLokiFlushIntervalMs = "BARITO_LOKI_FLUSH_INTERVAL_MS"
+	EnvServiceAddress = "BARITO_LOKI_SERVICE_ADDRESS"
+	EnvConsulUrl      = "BARITO_CONSUL_URL"
+	EnvConsulLokiName = "BARITO_CONSUL_LOKI_NAME"
+
+	EnvLokiUrl         = "BARITO_LOKI_URL"
+	EnvLokiBatchSize   = "BARITO_LOKI_BATCH_SIZE"
+	EnvLokiBatchWaitMs = "BARITO_LOKI_BATCH_WAIT_MS"
+
+	EnvLokiMinBackoffMs = "BARITO_LOKI_MIN_BACKOFF_MS"
+	EnvLokiMaxBackoffMs = "BARITO_LOKI_MAX_BACKOFF_MS"
+	EnvLokiMaxRetries   = "BARITO_LOKI_MAX_RETRIES"
+	EnvLokiTimeoutMs    = "BARITO_LOKI_TIMEOUT_MS"
 )
 
 var (
-	DefaultServiceAddress      = ":8080"
-	DefaultConsulLokiName      = "loki"
-	DefaultLokiUrl             = "http://localhost:3100"
-	DefaultLokiBulkSize        = 500
-	DefaultLokiFlushIntervalMs = 500
+	DefaultServiceAddress = ":8080"
+	DefaultConsulLokiName = "loki"
+
+	DefaultLokiUrl         = "http://localhost:3100"
+	DefaultLokiBatchSize   = 50000
+	DefaultLokiBatchWaitMs = 500
+
+	DefaultLokiMinBackoffMs = 100
+	DefaultLokiMaxBackoffMs = 10000
+	DefaultLokiMaxRetries   = 10
+	DefaultLokiTimeoutMs    = 10000
 )
 
 func configServiceAddress() (s string) {
@@ -49,12 +61,28 @@ func configLokiUrl() (url string) {
 	return
 }
 
-func configLokiBulkSize() (i int) {
-	return intEnvOrDefault(EnvLokiBulkSize, DefaultLokiBulkSize)
+func configLokiBatchSize() (i int) {
+	return intEnvOrDefault(EnvLokiBatchSize, DefaultLokiBatchSize)
 }
 
-func configLokiFlushIntervalMs() (i int) {
-	return intEnvOrDefault(EnvLokiFlushIntervalMs, DefaultLokiFlushIntervalMs)
+func configLokiBatchWaitMs() (i int) {
+	return intEnvOrDefault(EnvLokiBatchWaitMs, DefaultLokiBatchWaitMs)
+}
+
+func configLokiMinBackoffMs() (i int) {
+	return intEnvOrDefault(EnvLokiMinBackoffMs, DefaultLokiMinBackoffMs)
+}
+
+func configLokiMaxBackoffMs() (i int) {
+	return intEnvOrDefault(EnvLokiMaxBackoffMs, DefaultLokiMaxBackoffMs)
+}
+
+func configLokiMaxRetries() (i int) {
+	return intEnvOrDefault(EnvLokiMaxRetries, DefaultLokiMaxRetries)
+}
+
+func configLokiTimeoutMs() (i int) {
+	return intEnvOrDefault(EnvLokiTimeoutMs, DefaultLokiTimeoutMs)
 }
 
 func stringEnvOrDefault(key, defaultValue string) string {

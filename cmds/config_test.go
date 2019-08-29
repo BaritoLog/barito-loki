@@ -36,18 +36,50 @@ func TestGetLokiUrl(t *testing.T) {
 	FatalIf(t, configLokiUrl() != "http://some-loki", "should get from env variable")
 }
 
-func TestGetLokiBulkSize(t *testing.T) {
-	FatalIf(t, configLokiBulkSize() != DefaultLokiBulkSize, "should return default ")
+func TestGetLokiBatchSize(t *testing.T) {
+	FatalIf(t, configLokiBatchSize() != DefaultLokiBatchSize, "should return default ")
 
-	os.Setenv(EnvLokiBulkSize, "999")
+	os.Setenv(EnvLokiBatchSize, "999")
 	defer os.Clearenv()
-	FatalIf(t, configLokiBulkSize() != 999, "should get from env variable")
+	FatalIf(t, configLokiBatchSize() != 999, "should get from env variable")
 }
 
-func TestGetLokiFlushIntervalMs(t *testing.T) {
-	FatalIf(t, configLokiFlushIntervalMs() != DefaultLokiFlushIntervalMs, "should return default ")
+func TestGetLokiBatchWaitMs(t *testing.T) {
+	FatalIf(t, configLokiBatchWaitMs() != DefaultLokiBatchWaitMs, "should return default ")
 
-	os.Setenv(EnvLokiFlushIntervalMs, "999")
+	os.Setenv(EnvLokiBatchWaitMs, "999")
 	defer os.Clearenv()
-	FatalIf(t, configLokiFlushIntervalMs() != 999, "should get from env variable")
+	FatalIf(t, configLokiBatchWaitMs() != 999, "should get from env variable")
+}
+
+func TestGetLokiMinBackoffMs(t *testing.T) {
+	FatalIf(t, configLokiMinBackoffMs() != DefaultLokiMinBackoffMs, "should return default ")
+
+	os.Setenv(EnvLokiMinBackoffMs, "999")
+	defer os.Clearenv()
+	FatalIf(t, configLokiMinBackoffMs() != 999, "should get from env variable")
+}
+
+func TestGetLokiMaxBackoffMs(t *testing.T) {
+	FatalIf(t, configLokiMaxBackoffMs() != DefaultLokiMaxBackoffMs, "should return default ")
+
+	os.Setenv(EnvLokiMaxBackoffMs, "999")
+	defer os.Clearenv()
+	FatalIf(t, configLokiMaxBackoffMs() != 999, "should get from env variable")
+}
+
+func TestGetLokiMaxRetries(t *testing.T) {
+	FatalIf(t, configLokiMaxRetries() != DefaultLokiMaxRetries, "should return default ")
+
+	os.Setenv(EnvLokiMaxRetries, "999")
+	defer os.Clearenv()
+	FatalIf(t, configLokiMaxRetries() != 999, "should get from env variable")
+}
+
+func TestGetLokiTimeoutMs(t *testing.T) {
+	FatalIf(t, configLokiTimeoutMs() != DefaultLokiTimeoutMs, "should return default ")
+
+	os.Setenv(EnvLokiTimeoutMs, "999")
+	defer os.Clearenv()
+	FatalIf(t, configLokiTimeoutMs() != 999, "should get from env variable")
 }

@@ -38,12 +38,12 @@ func TestConvertBytesToTimberCollection_JsonParseError(t *testing.T) {
 	FatalIfWrongError(t, err, string(JsonParseError))
 }
 
-func TestConvertTimberToLokiProto(t *testing.T) {
+func TestConvertTimberToLokiEntryLine(t *testing.T) {
 	timber := make(map[string]interface{})
 	timber["hello"] = "world"
 
-	entry := ConvertTimberToLokiProto(timber)
-	FatalIf(t, entry.Line != `{"hello":"world"}`, "wrong entry.hello")
+	entry := ConvertTimberToLokiEntryLine(timber)
+	FatalIf(t, entry != `{"hello":"world"}`, "wrong entry.hello")
 }
 
 func TestConvertRequestToTimber(t *testing.T) {
