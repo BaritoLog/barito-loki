@@ -53,7 +53,7 @@ func TestBaritoLokiService_ProduceBatch_OnSuccess(t *testing.T) {
 
 func TestBaritoLokiService_Start(t *testing.T) {
 	service := &baritoLokiService{
-		grpcAddr:     ":24400",
+		grpcAddr: ":24400",
 		ptClient: FakePromtailClient(),
 	}
 	defer service.Close()

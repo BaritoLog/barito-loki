@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	EnvGrpcAddress = "BARITO_LOKI_GRPC_ADDRESS"
+	EnvServeRestApi   = "BARITO_LOKI_SERVE_REST_API"
+	EnvGrpcAddress    = "BARITO_LOKI_GRPC_ADDRESS"
+	EnvRestAddress    = "BARITO_LOKI_REST_ADDRESS"
 	EnvConsulUrl      = "BARITO_CONSUL_URL"
 	EnvConsulLokiName = "BARITO_CONSUL_LOKI_NAME"
 
@@ -23,7 +25,9 @@ const (
 )
 
 var (
-	DefaultGrpcAddress = ":8080"
+	DefaultServeRestApi   = "true"
+	DefaultGrpcAddress    = ":8080"
+	DefaultRestAddress    = ":8060"
 	DefaultConsulLokiName = "loki"
 
 	DefaultLokiUrl         = "http://localhost:3100"
@@ -36,8 +40,16 @@ var (
 	DefaultLokiTimeoutMs    = 10000
 )
 
+func configServeRestApi() bool {
+	return (stringEnvOrDefault(EnvServeRestApi, DefaultServeRestApi) == "true")
+}
+
 func configGrpcAddress() (s string) {
 	return stringEnvOrDefault(EnvGrpcAddress, DefaultGrpcAddress)
+}
+
+func configRestAddress() (s string) {
+	return stringEnvOrDefault(EnvRestAddress, DefaultRestAddress)
 }
 
 func configConsulUrl() (s string) {

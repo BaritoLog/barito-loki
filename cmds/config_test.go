@@ -20,6 +20,14 @@ func TestGetGrpcAddress(t *testing.T) {
 	FatalIf(t, configGrpcAddress() != ":12345", "should get from env variable")
 }
 
+func TestGetRestAddress(t *testing.T) {
+	FatalIf(t, configRestAddress() != DefaultRestAddress, "should return default ")
+
+	os.Setenv(EnvRestAddress, ":12345")
+	defer os.Clearenv()
+	FatalIf(t, configRestAddress() != ":12345", "should get from env variable")
+}
+
 func TestGetConsulLokiName(t *testing.T) {
 	FatalIf(t, configConsulLokiName() != DefaultConsulLokiName, "should return default ")
 

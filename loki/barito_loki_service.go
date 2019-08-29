@@ -3,12 +3,14 @@ package loki
 import (
 	"context"
 	"net"
+	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/BaritoLog/go-boilerplate/errkit"
 	"github.com/cortexproject/cortex/pkg/util"
 	"github.com/cortexproject/cortex/pkg/util/flagext"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/prometheus/common/model"
 	"google.golang.org/grpc"
 
@@ -19,19 +21,25 @@ import (
 )
 
 const (
-	ErrInitGrpc    = errkit.Error("Failed to listen to gRPC address")
-	ErrNilPromtail = errkit.Error("Promtail not found")
+	ErrInitGrpc     = errkit.Error("Failed to listen to gRPC address")
+	ErrNilPromtail  = errkit.Error("Promtail not found")
+	ErrRegisterGrpc = errkit.Error("Error registering gRPC server endpoint into reverse proxy")
+	ErrReverseProxy = errkit.Error("Error serving REST reverse proxy")
 )
 
 type BaritoLokiService interface {
 	pb.ProducerServer
 	Start() error
+	LaunchREST() error
 	Close()
 }
 
 type baritoLokiService struct {
-	grpcAddr   string
-	grpcServer *grpc.Server
+	grpcAddr string
+	restAddr string
+
+	grpcServer   *grpc.Server
+	reverseProxy *http.Server
 
 	ptConfig promtail.Config
 	ptClient promtail.Client
@@ -45,6 +53,7 @@ func NewBaritoLokiService(params map[string]interface{}) (srv BaritoLokiService,
 
 	srv = &baritoLokiService{
 		grpcAddr: params["grpcAddr"].(string),
+		restAddr: params["restAddr"].(string),
 		ptConfig: ptConfig,
 	}
 
@@ -128,13 +137,42 @@ func (s *baritoLokiService) Start() (err error) {
 	return grpcSrv.Serve(lis)
 }
 
+func (s *baritoLokiService) LaunchREST() (err error) {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	mux := runtime.NewServeMux()
+	opts := []grpc.DialOption{grpc.WithInsecure()}
+	err = pb.RegisterProducerHandlerFromEndpoint(ctx, mux, "localhost"+s.grpcAddr, opts)
+	if err != nil {
+		err = errkit.Concat(ErrRegisterGrpc, err)
+		return
+	}
+
+	s.reverseProxy = &http.Server{
+		Addr:    s.restAddr,
+		Handler: mux,
+	}
+
+	err = s.reverseProxy.ListenAndServe()
+	if err != nil {
+		err = errkit.Concat(ErrReverseProxy, err)
+	}
+	return
+}
+
 func (s *baritoLokiService) Close() {
-	if s.ptClient != nil {
-		s.ptClient.Stop()
+	if s.reverseProxy != nil {
+		s.reverseProxy.Close()
 	}
 
 	if s.grpcServer != nil {
 		s.grpcServer.GracefulStop()
+	}
+
+	if s.ptClient != nil {
+		s.ptClient.Stop()
 	}
 }
 

@@ -3,18 +3,14 @@ module github.com/vwidjaya/barito-loki
 go 1.12
 
 require (
-	bou.ke/monkey v1.0.1 // indirect
 	cloud.google.com/go/bigtable v1.0.0 // indirect
 	github.com/BaritoLog/go-boilerplate v0.0.0-20190116075340-b95aeda121e9
-	github.com/bouk/monkey v1.0.1 // indirect
 	github.com/cortexproject/cortex v0.1.0
 	github.com/go-kit/kit v0.8.0
-	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2
-	github.com/golang/snappy v0.0.1
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/grafana/loki v0.3.0
-	github.com/grpc-ecosystem/grpc-gateway v1.9.6 // indirect
+	github.com/grpc-ecosystem/grpc-gateway v1.9.6
 	github.com/hashicorp/consul v1.4.4
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/prometheus/common v0.4.1

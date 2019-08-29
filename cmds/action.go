@@ -10,7 +10,8 @@ import (
 
 func ActionBaritoLokiService(c *cli.Context) (err error) {
 	serviceParams := map[string]interface{}{
-		"grpcAddr":  configGrpcAddress(),
+		"grpcAddr":     configGrpcAddress(),
+		"restAddr":     configRestAddress(),
 		"lokiUrl":      configLokiUrl(),
 		"batchWaitMs":  configLokiBatchWaitMs(),
 		"batchSize":    configLokiBatchSize(),
@@ -25,12 +26,13 @@ func ActionBaritoLokiService(c *cli.Context) (err error) {
 		return
 	}
 
-	err = service.Start()
-	if err != nil {
-		return
+	go service.Start()
+	if configServeRestApi() {
+		go service.LaunchREST()
 	}
-	fmt.Println("Loki's Promtail client started.")
-	srvkit.AsyncGracefulShutdown(service.Close)
+
+	fmt.Println("Barito-Loki started.")
+	srvkit.GracefullShutdown(service.Close)
 
 	return
 }
