@@ -10,7 +10,7 @@ import (
 
 func ActionBaritoLokiService(c *cli.Context) (err error) {
 	serviceParams := map[string]interface{}{
-		"serviceAddr":  configServiceAddress(),
+		"grpcAddr":  configGrpcAddress(),
 		"lokiUrl":      configLokiUrl(),
 		"batchWaitMs":  configLokiBatchWaitMs(),
 		"batchSize":    configLokiBatchSize(),

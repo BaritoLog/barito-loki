@@ -12,12 +12,12 @@ func init() {
 	log.SetLevel(log.ErrorLevel)
 }
 
-func TestGetServiceAddress(t *testing.T) {
-	FatalIf(t, configServiceAddress() != DefaultServiceAddress, "should return default ")
+func TestGetGrpcAddress(t *testing.T) {
+	FatalIf(t, configGrpcAddress() != DefaultGrpcAddress, "should return default ")
 
-	os.Setenv(EnvServiceAddress, ":12345")
+	os.Setenv(EnvGrpcAddress, ":12345")
 	defer os.Clearenv()
-	FatalIf(t, configServiceAddress() != ":12345", "should get from env variable")
+	FatalIf(t, configGrpcAddress() != ":12345", "should get from env variable")
 }
 
 func TestGetConsulLokiName(t *testing.T) {

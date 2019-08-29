@@ -1,7 +1,8 @@
 package loki
 
 import (
-	"net/http"
+	"context"
+	"net"
 	"net/url"
 	"time"
 
@@ -9,25 +10,29 @@ import (
 	"github.com/cortexproject/cortex/pkg/util"
 	"github.com/cortexproject/cortex/pkg/util/flagext"
 	"github.com/prometheus/common/model"
+	"google.golang.org/grpc"
 
 	logkit "github.com/go-kit/kit/log/logrus"
 	promtail "github.com/grafana/loki/pkg/promtail/client"
 	logrus "github.com/sirupsen/logrus"
+	pb "github.com/vwidjaya/barito-proto/producer"
 )
 
 const (
-	ErrLokiClient = errkit.Error("Loki Client Failed")
+	ErrInitGrpc    = errkit.Error("Failed to listen to gRPC address")
+	ErrNilPromtail = errkit.Error("Promtail not found")
 )
 
 type BaritoLokiService interface {
+	pb.ProducerServer
 	Start() error
 	Close()
-	ServeHTTP(rw http.ResponseWriter, req *http.Request)
 }
 
 type baritoLokiService struct {
-	addr     string
-	server   *http.Server
+	grpcAddr   string
+	grpcServer *grpc.Server
+
 	ptConfig promtail.Config
 	ptClient promtail.Client
 }
@@ -39,7 +44,7 @@ func NewBaritoLokiService(params map[string]interface{}) (srv BaritoLokiService,
 	}
 
 	srv = &baritoLokiService{
-		addr:     params["serviceAddr"].(string),
+		grpcAddr: params["grpcAddr"].(string),
 		ptConfig: ptConfig,
 	}
 
@@ -79,26 +84,6 @@ func parseLokiConfig(params map[string]interface{}) (cfg promtail.Config, err er
 	return
 }
 
-func (s *baritoLokiService) Start() (err error) {
-	err = s.initPromtailClient()
-	if err != nil {
-		return
-	}
-
-	server := s.initHttpServer()
-	return server.ListenAndServe()
-}
-
-func (s *baritoLokiService) Close() {
-	if s.ptClient != nil {
-		s.ptClient.Stop()
-	}
-
-	if s.server != nil {
-		s.server.Close()
-	}
-}
-
 func (s *baritoLokiService) initPromtailClient() (err error) {
 	if s.ptClient != nil {
 		return nil
@@ -115,66 +100,84 @@ func (s *baritoLokiService) initPromtailClient() (err error) {
 	return
 }
 
-func (s *baritoLokiService) initHttpServer() (server *http.Server) {
-	server = &http.Server{
-		Addr:    s.addr,
-		Handler: s,
-	}
-
-	s.server = server
-	return
-}
-
-func (s *baritoLokiService) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	if s.ptClient == nil {
-		onStoreError(rw, ErrLokiClient)
+func (s *baritoLokiService) initGrpcServer() (lis net.Listener, srv *grpc.Server, err error) {
+	lis, err = net.Listen("tcp", s.grpcAddr)
+	if err != nil {
 		return
 	}
 
-	var labels string
+	srv = grpc.NewServer()
+	pb.RegisterProducerServer(srv, s)
 
-	if req.URL.Path == "/produce_batch" {
-		timberCollection, err := ConvertBatchRequestToTimberCollection(req)
-		if err != nil {
-			onBadRequest(rw, err)
-			return
-		}
+	s.grpcServer = srv
+	return
+}
 
-		esIndexPrefix := timberCollection.Context["es_index_prefix"].(string)
-		labels = generateLabelForTimber(esIndexPrefix)
+func (s *baritoLokiService) Start() (err error) {
+	err = s.initPromtailClient()
+	if err != nil {
+		return
+	}
 
-		var ls model.LabelSet
-		ls.UnmarshalJSON([]byte(labels))
+	lis, grpcSrv, err := s.initGrpcServer()
+	if err != nil {
+		err = errkit.Concat(ErrInitGrpc, err)
+		return
+	}
 
-		for _, timber := range timberCollection.Items {
-			timber.SetAppNameLabel(labels)
-			if timber.Timestamp() == "" {
-				timber.SetTimestamp(time.Now().UTC().Format(time.RFC3339))
-			}
+	return grpcSrv.Serve(lis)
+}
 
-			ts := time.Now().UTC()
-			line := ConvertTimberToLokiEntryLine(timber)
+func (s *baritoLokiService) Close() {
+	if s.ptClient != nil {
+		s.ptClient.Stop()
+	}
 
-			_ = s.ptClient.Handle(ls, ts, line)
-		}
-	} else {
-		timber, err := ConvertRequestToTimber(req)
-		if err != nil {
-			onBadRequest(rw, err)
-			return
-		}
+	if s.grpcServer != nil {
+		s.grpcServer.GracefulStop()
+	}
+}
 
-		var ls model.LabelSet
-		labels = timber.Labels()
-		ls.UnmarshalJSON([]byte(labels))
+func (s *baritoLokiService) Produce(_ context.Context, timber *pb.Timber) (resp *pb.ProduceResult, err error) {
+	if s.ptClient == nil {
+		err = onStoreErrorGrpc(ErrNilPromtail)
+		return
+	}
 
+	var ls model.LabelSet
+	labels := GenerateLokiLabels(timber.GetContext())
+	ls.UnmarshalJSON([]byte(labels))
+
+	ts := time.Now().UTC()
+	line := SerializeTimberContents(timber)
+
+	_ = s.ptClient.Handle(ls, ts, line)
+
+	resp = &pb.ProduceResult{
+		Topic: labels,
+	}
+	return
+}
+
+func (s *baritoLokiService) ProduceBatch(_ context.Context, timberCollection *pb.TimberCollection) (resp *pb.ProduceResult, err error) {
+	if s.ptClient == nil {
+		err = onStoreErrorGrpc(ErrNilPromtail)
+		return
+	}
+
+	var ls model.LabelSet
+	labels := GenerateLokiLabels(timberCollection.GetContext())
+	ls.UnmarshalJSON([]byte(labels))
+
+	for _, timber := range timberCollection.GetItems() {
 		ts := time.Now().UTC()
-		line := ConvertTimberToLokiEntryLine(timber)
+		line := SerializeTimberContents(timber)
 
 		_ = s.ptClient.Handle(ls, ts, line)
 	}
 
-	onSuccess(rw, ForwardResult{
-		Labels: labels,
-	})
+	resp = &pb.ProduceResult{
+		Topic: labels,
+	}
+	return
 }

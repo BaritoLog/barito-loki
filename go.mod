@@ -14,11 +14,13 @@ require (
 	github.com/golang/snappy v0.0.1
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/grafana/loki v0.3.0
+	github.com/grpc-ecosystem/grpc-gateway v1.9.6 // indirect
 	github.com/hashicorp/consul v1.4.4
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/prometheus/common v0.4.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/urfave/cli v1.20.0
+	github.com/vwidjaya/barito-proto v0.0.0-20190826080059-719b7ada96b8
 	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586 // indirect
 	golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56 // indirect
 	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297 // indirect
@@ -26,6 +28,6 @@ require (
 	golang.org/x/tools v0.0.0-20190827205025-b29f5f60c37a // indirect
 	google.golang.org/api v0.9.0 // indirect
 	google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55 // indirect
-	google.golang.org/grpc v1.23.0 // indirect
+	google.golang.org/grpc v1.23.0
 	honnef.co/go/tools v0.0.1-2019.2.2 // indirect
 )

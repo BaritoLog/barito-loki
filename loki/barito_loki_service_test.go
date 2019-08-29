@@ -1,90 +1,60 @@
 package loki
 
 import (
-	"bytes"
-	"net/http"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	. "github.com/BaritoLog/go-boilerplate/testkit"
-	"github.com/BaritoLog/go-boilerplate/timekit"
-	"github.com/golang/mock/gomock"
 	"github.com/grafana/loki/pkg/promtail/api"
 	promtail "github.com/grafana/loki/pkg/promtail/client/fake"
 	"github.com/prometheus/common/model"
-	log "github.com/sirupsen/logrus"
+	pb "github.com/vwidjaya/barito-proto/producer"
 )
 
-func init() {
-	log.SetLevel(log.ErrorLevel)
+func TestBaritoLokiService_Produce_OnStoreError(t *testing.T) {
+	srv := &baritoLokiService{}
+
+	_, err := srv.Produce(nil, pb.SampleTimberProto())
+	FatalIfWrongGrpcError(t, onStoreErrorGrpc(fmt.Errorf("")), err)
 }
 
-func TestBaritoLokiService_ServeHTTP_OnBadRequest(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	service := &baritoLokiService{
-		ptClient: FakeLokiClient(),
+func TestBaritoLokiService_Produce_OnSuccess(t *testing.T) {
+	srv := &baritoLokiService{
+		ptClient: FakePromtailClient(),
 	}
-	defer service.Close()
 
-	req, _ := http.NewRequest("POST", "/", strings.NewReader(`invalid-body`))
-	resp := RecordResponse(service.ServeHTTP, req)
+	resp, err := srv.Produce(nil, pb.SampleTimberProto())
+	FatalIfError(t, err)
 
-	FatalIfWrongResponseStatus(t, resp, http.StatusBadRequest)
+	expected := GenerateLokiLabels(pb.SampleTimberProto().GetContext())
+	FatalIf(t, resp.GetTopic() != expected, "wrong result.Topic (Loki labels)")
 }
 
-func TestBaritoLokiService_ServeHTTP_OnStoreError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+func TestBaritoLokiService_ProduceBatch_OnStoreError(t *testing.T) {
+	srv := &baritoLokiService{}
 
-	service := &baritoLokiService{}
-	defer service.Close()
-
-	req, _ := http.NewRequest("POST", "/", bytes.NewReader(sampleRawTimber()))
-	resp := RecordResponse(service.ServeHTTP, req)
-
-	FatalIfWrongResponseStatus(t, resp, http.StatusBadGateway)
+	_, err := srv.ProduceBatch(nil, pb.SampleTimberCollectionProto())
+	FatalIfWrongGrpcError(t, onStoreErrorGrpc(fmt.Errorf("")), err)
 }
 
-func TestBaritoLokiService_ServeHTTP_OnSuccess(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	service := &baritoLokiService{
-		ptClient: FakeLokiClient(),
+func TestBaritoLokiService_ProduceBatch_OnSuccess(t *testing.T) {
+	srv := &baritoLokiService{
+		ptClient: FakePromtailClient(),
 	}
-	defer service.Close()
 
-	req, _ := http.NewRequest("POST", "/", bytes.NewReader(sampleRawTimber()))
-	resp := RecordResponse(service.ServeHTTP, req)
+	resp, err := srv.ProduceBatch(nil, pb.SampleTimberCollectionProto())
+	FatalIfError(t, err)
 
-	FatalIfWrongResponseStatus(t, resp, http.StatusOK)
-}
-
-func TestBaritoLokiService_ServeHTTP_ProduceBatch_OnSuccess(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	service := &baritoLokiService{
-		ptClient: FakeLokiClient(),
-	}
-	defer service.Close()
-
-	req, _ := http.NewRequest("POST", "/produce_batch", bytes.NewReader(sampleRawTimberCollection()))
-	resp := RecordResponse(service.ServeHTTP, req)
-
-	FatalIfWrongResponseStatus(t, resp, http.StatusOK)
+	expected := GenerateLokiLabels(pb.SampleTimberCollectionProto().GetContext())
+	FatalIf(t, resp.GetTopic() != expected, "wrong result.Topic (Loki labels)")
 }
 
 func TestBaritoLokiService_Start(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
 	service := &baritoLokiService{
-		addr:     ":24400",
-		ptClient: FakeLokiClient(),
+		grpcAddr:     ":24400",
+		ptClient: FakePromtailClient(),
 	}
 	defer service.Close()
 
@@ -95,18 +65,25 @@ func TestBaritoLokiService_Start(t *testing.T) {
 	defer service.Close()
 
 	FatalIfError(t, err)
-
-	timekit.Sleep("1ms")
-	resp, err := http.Get("http://:24400")
-	FatalIfError(t, err)
-	FatalIfWrongResponseStatus(t, resp, http.StatusBadRequest)
 }
 
-func FakeLokiClient() *promtail.Client {
+func FakePromtailClient() *promtail.Client {
 	onHandleFunc := api.EntryHandlerFunc(func(labels model.LabelSet, time time.Time, entry string) error { return nil })
 	onStopFunc := func() {}
 	return &promtail.Client{
 		OnHandleEntry: onHandleFunc,
 		OnStop:        onStopFunc,
+	}
+}
+
+func FatalIfWrongGrpcError(t *testing.T, expected error, actual error) {
+	expFields := strings.Fields(expected.Error())[:5]
+	expStr := strings.Join(expFields, " ")
+
+	actFields := strings.Fields(actual.Error())[:5]
+	actStr := strings.Join(actFields, " ")
+
+	if expStr != actStr {
+		t.Errorf("expected gRPC response code %v, received %v.", expFields[4], actFields[4])
 	}
 }

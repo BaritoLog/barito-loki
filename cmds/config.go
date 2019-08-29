@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	EnvServiceAddress = "BARITO_LOKI_SERVICE_ADDRESS"
+	EnvGrpcAddress = "BARITO_LOKI_GRPC_ADDRESS"
 	EnvConsulUrl      = "BARITO_CONSUL_URL"
 	EnvConsulLokiName = "BARITO_CONSUL_LOKI_NAME"
 
@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	DefaultServiceAddress = ":8080"
+	DefaultGrpcAddress = ":8080"
 	DefaultConsulLokiName = "loki"
 
 	DefaultLokiUrl         = "http://localhost:3100"
@@ -36,8 +36,8 @@ var (
 	DefaultLokiTimeoutMs    = 10000
 )
 
-func configServiceAddress() (s string) {
-	return stringEnvOrDefault(EnvServiceAddress, DefaultServiceAddress)
+func configGrpcAddress() (s string) {
+	return stringEnvOrDefault(EnvGrpcAddress, DefaultGrpcAddress)
 }
 
 func configConsulUrl() (s string) {
