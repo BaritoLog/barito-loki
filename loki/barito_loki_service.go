@@ -2,9 +2,9 @@ package loki
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/BaritoLog/go-boilerplate/errkit"
@@ -69,13 +69,10 @@ func parseLokiConfig(params map[string]interface{}) (cfg promtail.Config, err er
 	maxRetries := params["maxRetries"].(int)
 	timeoutMs := params["timeoutMs"].(int)
 
-	url, err := url.Parse(lokiUrl)
+	var promtailURL flagext.URLValue
+	err = promtailURL.Set(fmt.Sprintf("%s/api/prom/push", lokiUrl))
 	if err != nil {
 		return
-	}
-
-	promtailURL := flagext.URLValue{
-		URL: url,
 	}
 
 	cfg = promtail.Config{
