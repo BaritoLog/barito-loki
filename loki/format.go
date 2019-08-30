@@ -10,7 +10,7 @@ import (
 )
 
 func GenerateLokiLabels(tCtx *pb.TimberContext) string {
-	return fmt.Sprintf("{app_name=\"%s-%s\"}", tCtx.GetEsIndexPrefix(), time.Now().Format("2006.01.02"))
+	return fmt.Sprintf("{\"app_name\":\"%s-%s\"}", tCtx.GetEsIndexPrefix(), time.Now().Format("2006.01.02"))
 }
 
 func SerializeTimberContents(timber *pb.Timber) string {
