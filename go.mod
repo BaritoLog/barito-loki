@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/common v0.4.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/urfave/cli v1.20.0
-	github.com/vwidjaya/barito-proto v0.0.0-20190826080059-719b7ada96b8
+	github.com/vwidjaya/barito-proto v0.0.0-20190830092336-8ebe7cb28fe1
 	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586 // indirect
 	golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56 // indirect
 	golang.org/x/net v0.0.0-20190827160401-ba9fcec4b297 // indirect

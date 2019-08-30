@@ -382,7 +382,8 @@ github.com/uber-go/atomic v1.3.2/go.mod h1:/Ct5t2lcmbJ4OSe/waGBoaVvVqtO0bmtfVNex
 github.com/uber/jaeger-client-go v2.16.0+incompatible/go.mod h1:WVhlPFC8FDjOFMMWRy2pZqQJSXxYSwNYOkTr/Z6d3Kk=
 github.com/uber/jaeger-lib v2.0.0+incompatible/go.mod h1:ComeNDZlWwrWnDv8aPp0Ba6+uUTzImX/AauajbLI56U=
 github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
-github.com/vwidjaya/barito-proto v0.0.0-20190826080059-719b7ada96b8/go.mod h1:cKyLdXVkzTlCDuicrSZ924ptbLelLhaTLphPUcinsiA=
+github.com/vwidjaya/barito-proto v0.0.0-20190830092336-8ebe7cb28fe1 h1:ycuS1VYsnB383H++4Xp2UPDiEKebB70qXVHx5DNUc8g=
+github.com/vwidjaya/barito-proto v0.0.0-20190830092336-8ebe7cb28fe1/go.mod h1:cKyLdXVkzTlCDuicrSZ924ptbLelLhaTLphPUcinsiA=
 github.com/weaveworks/billing-client v0.0.0-20171006123215-be0d55e547b1/go.mod h1:7gGdEUJaCrSlWi/mjd68CZv0sfqektYPDcro9cE+M9k=
 github.com/weaveworks/common v0.0.0-20190410110702-87611edc252e/go.mod h1:pSm+0KR57BG3pvGoJWFXJSAC7+sEPewcvdt5StevL3A=
 github.com/weaveworks/mesh v0.0.0-20170131170447-5015f896ab62/go.mod h1:mcON9Ws1aW0crSErpXWp7U1ErCDEKliDX2OhVlbWRKk=
